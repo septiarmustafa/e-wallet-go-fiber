@@ -5,7 +5,7 @@ import (
 )
 
 func GeneratorRandomString(n int) string {
-	var charsets = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+	var charsets = []rune("AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890")
 	letters := make([]rune, n)
 	for i := range letters {
 		letters[i] = charsets[rand.Intn(len(charsets))]
