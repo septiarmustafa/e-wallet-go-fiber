@@ -6,20 +6,23 @@ import (
 	"e-wallet/dto"
 	"e-wallet/internal/util"
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
 type transactionService struct {
-	accountRespository    domain.AccountRepository
-	transactionRepository domain.TransactionRepository
-	cacheRepository       domain.CacheRepository
+	accountRespository     domain.AccountRepository
+	transactionRepository  domain.TransactionRepository
+	cacheRepository        domain.CacheRepository
+	notificationRepository domain.NotificationRepository
 }
 
-func NewTransaction(accountRespository domain.AccountRepository, transactionRepository domain.TransactionRepository, cacheRepository domain.CacheRepository) domain.TransactionService {
+func NewTransaction(accountRespository domain.AccountRepository, transactionRepository domain.TransactionRepository, cacheRepository domain.CacheRepository, notificationRepository domain.NotificationRepository) domain.TransactionService {
 	return &transactionService{
-		accountRespository:    accountRespository,
-		transactionRepository: transactionRepository,
-		cacheRepository:       cacheRepository,
+		accountRespository:     accountRespository,
+		transactionRepository:  transactionRepository,
+		cacheRepository:        cacheRepository,
+		notificationRepository: notificationRepository,
 	}
 }
 
@@ -134,5 +137,29 @@ func (t *transactionService) TransferExecute(ctx context.Context, req dto.Transf
 		return err
 	}
 
+	go t.notificationAfterTransfer(myAccount, dofAcount, reqInquiry.Amount)
 	return nil
+}
+
+func (t transactionService) notificationAfterTransfer(sofAccount domain.Account, dofAccount domain.Account, amount float64) {
+	notificationSender := domain.Notification{
+		UserID:    sofAccount.UserId,
+		Title:     "Transfer berhasil",
+		Body:      fmt.Sprintf("Transfer senilai %.2f", amount),
+		IsRead:    0,
+		Status:    1,
+		CreatedAt: time.Now(),
+	}
+
+	notificationReceiver := domain.Notification{
+		UserID:    dofAccount.UserId,
+		Title:     "Dana diterima",
+		Body:      fmt.Sprintf("Dana diterima senilai %.2f", amount),
+		IsRead:    0,
+		Status:    1,
+		CreatedAt: time.Now(),
+	}
+
+	_ = t.notificationRepository.Insert(context.Background(), &notificationSender)
+	_ = t.notificationRepository.Insert(context.Background(), &notificationReceiver)
 }
